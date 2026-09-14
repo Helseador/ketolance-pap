@@ -1,0 +1,211 @@
+@import "tailwindcss";
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
+
+/* ------------------------------------------------------------------ */
+/* Design tokens                                                         */
+/* ------------------------------------------------------------------ */
+:root {
+  /* Base neumórfica — fondo cálido rosado */
+  --background: #f0e8ee;
+  --foreground: #2a1520;
+
+  /* Marca */
+  --brand: #c4126b;
+  --brand-dark: #8c0d4e;
+  --brand-light: #f3d0e3;
+  --accent: #e91e8c;
+
+  /* Superficie */
+  --card: #f0e8ee;
+  --card-raised: #f7f0f5;
+
+  /* Sombras neumórficas — clave del efecto */
+  --neu-shadow: 6px 6px 14px #d4c2cf, -6px -6px 14px #ffffff;
+  --neu-shadow-sm: 3px 3px 8px #d4c2cf, -3px -3px 8px #ffffff;
+  --neu-shadow-inset: inset 4px 4px 10px #d4c2cf, inset -4px -4px 10px #ffffff;
+  --neu-shadow-pressed: inset 3px 3px 7px #d0bfcc, inset -3px -3px 7px #fdf6fb;
+
+  /* Bordes suaves */
+  --radius: 1rem;
+  --radius-sm: 0.75rem;
+  --radius-lg: 1.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-light: var(--brand-light);
+  --color-accent: var(--accent);
+  --color-card: var(--card);
+  --font-sans: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                  */
+/* ------------------------------------------------------------------ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ------------------------------------------------------------------ */
+/* Clases neumórficas globales                                           */
+/* ------------------------------------------------------------------ */
+.neu {
+  background: var(--background);
+  box-shadow: var(--neu-shadow);
+  border-radius: var(--radius);
+}
+
+.neu-sm {
+  background: var(--background);
+  box-shadow: var(--neu-shadow-sm);
+  border-radius: var(--radius-sm);
+}
+
+.neu-inset {
+  background: var(--background);
+  box-shadow: var(--neu-shadow-inset);
+  border-radius: var(--radius);
+}
+
+.neu-card {
+  background: var(--card-raised);
+  box-shadow: var(--neu-shadow);
+  border-radius: var(--radius);
+}
+
+.neu-btn {
+  background: var(--background);
+  box-shadow: var(--neu-shadow-sm);
+  border-radius: var(--radius-sm);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.neu-btn:hover {
+  box-shadow: 4px 4px 10px #d4c2cf, -4px -4px 10px #ffffff;
+  transform: translateY(-1px);
+}
+
+.neu-btn:active {
+  box-shadow: var(--neu-shadow-pressed);
+  transform: translateY(0);
+}
+
+.neu-btn-brand {
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  box-shadow: 4px 4px 12px #b01062, -2px -2px 8px #f3d0e3;
+  border-radius: var(--radius-sm);
+  color: white;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.neu-btn-brand:hover {
+  box-shadow: 6px 6px 16px #a00d59, -2px -2px 8px #f8e0ef;
+  transform: translateY(-1px);
+}
+
+.neu-btn-brand:active {
+  box-shadow: inset 3px 3px 8px #8c0d4e, inset -2px -2px 6px #e91e8c;
+  transform: translateY(0);
+}
+
+.neu-input {
+  background: var(--background);
+  box-shadow: var(--neu-shadow-inset);
+  border-radius: var(--radius-sm);
+  border: none;
+  outline: none;
+  transition: box-shadow 0.2s ease;
+}
+
+.neu-input:focus {
+  box-shadow: inset 4px 4px 10px #c8b5c4, inset -4px -4px 10px #ffffff,
+    0 0 0 2px var(--brand-light);
+}
+
+/* ------------------------------------------------------------------ */
+/* Animaciones de transición de pestañas                                 */
+/* ------------------------------------------------------------------ */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.tab-enter-right {
+  animation: slideInRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tab-enter-left {
+  animation: slideInLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.fade-up {
+  animation: fadeUp 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.scale-in {
+  animation: scaleIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ------------------------------------------------------------------ */
+/* Scrollbar personalizado                                               */
+/* ------------------------------------------------------------------ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #d4b8cb;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--brand); }
+
+/* ------------------------------------------------------------------ */
+/* Utilidades extra                                                      */
+/* ------------------------------------------------------------------ */
+.gradient-brand {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%);
+}
+
+.gradient-soft {
+  background: linear-gradient(135deg, #f7f0f5 0%, #f0e8ee 100%);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--brand), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

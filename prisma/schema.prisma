@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String // SUPERADMIN | EMPRESA | NUTRICIONISTA
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignments PatientAssignment[]
+  auditLogs   AuditLog[]
+}
+
+model Patient {
+  id              String   @id @default(cuid())
+  documentId      String   @unique
+  firstName       String
+  lastName        String
+  phone           String   @unique
+  caregiverName   String?
+  caregiverPhone  String?
+  diagnosis       String?
+  mipresStatus    String?
+  notes           String?
+  consentAt       DateTime?
+  ketolanceActive Boolean  @default(true)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  surveyToken String?  @unique @default(cuid())
+
+  assignments PatientAssignment[]
+  surveys     Survey[]
+  pasaporte   Pasaporte?
+}
+
+model PatientAssignment {
+  userId    String
+  patientId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@id([userId, patientId])
+}
+
+model Survey {
+  id           String    @id @default(cuid())
+  patientId    String
+  slot         String // MANANA | MEDIODIA | TARDE
+  localDate    String // YYYY-MM-DD America/Bogota
+  status       String    @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | FAILED
+  currentStep  String    @default("VOMITOS")
+  sentAt       DateTime?
+  completedAt  DateTime?
+
+  // Síntomas numéricos (cantidad de episodios, 0 = ninguno)
+  vomitos           String?   // número
+  diarrea           String?   // número
+  fiebre            String?   // número de episodios
+  temperaturaFiebre String?   // °C — solo si fiebre > 0
+  numeroCrisis      String?   // número de crisis epilépticas
+  // Sí/No
+  transgresionDieta String?
+  cambioFae         String?
+  // Valores clínicos
+  glucosa           String?   // mg/dl
+  cetonas           String?   // valor
+  estadoAnimo       String?   // BIEN | REGULAR | MAL
+  peso              String?   // kg — solo turno MANANA
+  // Texto libre
+  observaciones     String?
+
+  lastWhatsappId String?
+  errorMessage   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, localDate, slot])
+  @@index([localDate, slot])
+  @@index([status])
+}
+
+model Pasaporte {
+  id        String   @id @default(cuid())
+  patientId String   @unique
+  // Hoja 4 – Info clave adicional
+  birthDate          String?
+  bloodType          String?
+  emergencyName      String?
+  emergencyPhone     String?
+  neurologistName    String?
+  neurologistPhone   String?
+  nutritionistName   String?
+  nutritionistPhone  String?
+  photoUrl           String?
+  // Hoja 5 – Medicamentos y alergias
+  anticonvulsants    String? // JSON array [{name, dose, schedule}]
+  supplements        String? // JSON array [{name, dose}]
+  allergies          String?
+  // Hoja 6 – Dieta
+  dietType           String?
+  ketogenicRatio     String?
+  ketogenicFormula   String?
+  dietRestrictions   String?
+  // Hoja 7 – Instrucciones médicas extra
+  maxDailyGlucose    String?
+  contactPhone       String?
+  contactEmail       String?
+  medicalNotes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  beforeJson String?
+  afterJson  String?
+  reverted   Boolean  @default(false)
+  revertsId  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
