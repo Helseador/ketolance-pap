@@ -1,89 +1,74 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth";
+import { findPasaporte, upsertPasaporte } from "@/lib/db/pasaportes";
+import { findPatientById } from "@/lib/db/patients";
 
 export async function getPasaporte(patientId: string) {
   await requireSession();
-  return prisma.pasaporte.findUnique({ where: { patientId } });
+  return findPasaporte(patientId);
+}
+
+function extractPasaporteData(formData: FormData) {
+  const str = (k: string) => String(formData.get(k) ?? "") || null;
+  return {
+    birthDate:         str("birthDate"),
+    bloodType:         str("bloodType"),
+    emergencyName:     str("emergencyName"),
+    emergencyPhone:    str("emergencyPhone"),
+    neurologistName:   str("neurologistName"),
+    neurologistPhone:  str("neurologistPhone"),
+    nutritionistName:  str("nutritionistName"),
+    nutritionistPhone: str("nutritionistPhone"),
+    anticonvulsants:   str("anticonvulsants"),
+    supplements:       str("supplements"),
+    allergies:         str("allergies"),
+    dietType:          str("dietType"),
+    ketogenicRatio:    str("ketogenicRatio"),
+    ketogenicFormula:  str("ketogenicFormula"),
+    dietRestrictions:  str("dietRestrictions"),
+    maxDailyGlucose:   str("maxDailyGlucose"),
+    contactPhone:      str("contactPhone"),
+    contactEmail:      str("contactEmail"),
+    medicalNotes:      str("medicalNotes"),
+  };
 }
 
 export async function savePasaporte(formData: FormData) {
   await requireSession();
   const patientId = String(formData.get("patientId") ?? "");
   if (!patientId) throw new Error("patientId requerido");
-
-  const data = {
-    birthDate:         String(formData.get("birthDate") ?? "") || null,
-    bloodType:         String(formData.get("bloodType") ?? "") || null,
-    emergencyName:     String(formData.get("emergencyName") ?? "") || null,
-    emergencyPhone:    String(formData.get("emergencyPhone") ?? "") || null,
-    neurologistName:   String(formData.get("neurologistName") ?? "") || null,
-    neurologistPhone:  String(formData.get("neurologistPhone") ?? "") || null,
-    nutritionistName:  String(formData.get("nutritionistName") ?? "") || null,
-    nutritionistPhone: String(formData.get("nutritionistPhone") ?? "") || null,
-    anticonvulsants:   String(formData.get("anticonvulsants") ?? "") || null,
-    supplements:       String(formData.get("supplements") ?? "") || null,
-    allergies:         String(formData.get("allergies") ?? "") || null,
-    dietType:          String(formData.get("dietType") ?? "") || null,
-    ketogenicRatio:    String(formData.get("ketogenicRatio") ?? "") || null,
-    ketogenicFormula:  String(formData.get("ketogenicFormula") ?? "") || null,
-    dietRestrictions:  String(formData.get("dietRestrictions") ?? "") || null,
-    maxDailyGlucose:   String(formData.get("maxDailyGlucose") ?? "") || null,
-    contactPhone:      String(formData.get("contactPhone") ?? "") || null,
-    contactEmail:      String(formData.get("contactEmail") ?? "") || null,
-    medicalNotes:      String(formData.get("medicalNotes") ?? "") || null,
-  };
-
-  await prisma.pasaporte.upsert({
-    where: { patientId },
-    update: data,
-    create: { patientId, ...data },
-  });
-
+  await upsertPasaporte(patientId, extractPasaporteData(formData));
   revalidatePath(`/dashboard/pacientes/${patientId}/pasaporte`);
 }
 
-/**
- * Versión pública para el paciente — solo hojas 4, 5 y 6.
- * Valida que el patientId corresponda a un paciente activo.
- * NO requiere sesión del dashboard.
- */
 export async function savePasaportePublico(formData: FormData) {
   const patientId = String(formData.get("patientId") ?? "");
   if (!patientId) throw new Error("patientId requerido");
 
-  // Verificar que el paciente existe y está activo
-  const patient = await prisma.patient.findFirst({
-    where: { id: patientId, active: true },
-    select: { id: true },
-  });
-  if (!patient) throw new Error("Paciente no encontrado");
+  const patient = await findPatientById(patientId);
+  if (!patient || !patient.active) throw new Error("Paciente no encontrado");
 
-  // Solo campos de hojas 4, 5 y 6 — no instrucciones médicas (hoja 7)
-  const data = {
-    birthDate:         String(formData.get("birthDate") ?? "") || null,
-    bloodType:         String(formData.get("bloodType") ?? "") || null,
-    emergencyName:     String(formData.get("emergencyName") ?? "") || null,
-    emergencyPhone:    String(formData.get("emergencyPhone") ?? "") || null,
-    neurologistName:   String(formData.get("neurologistName") ?? "") || null,
-    neurologistPhone:  String(formData.get("neurologistPhone") ?? "") || null,
-    nutritionistName:  String(formData.get("nutritionistName") ?? "") || null,
-    nutritionistPhone: String(formData.get("nutritionistPhone") ?? "") || null,
-    anticonvulsants:   String(formData.get("anticonvulsants") ?? "") || null,
-    supplements:       String(formData.get("supplements") ?? "") || null,
-    allergies:         String(formData.get("allergies") ?? "") || null,
-    dietType:          String(formData.get("dietType") ?? "") || null,
-    ketogenicRatio:    String(formData.get("ketogenicRatio") ?? "") || null,
-    ketogenicFormula:  String(formData.get("ketogenicFormula") ?? "") || null,
-    dietRestrictions:  String(formData.get("dietRestrictions") ?? "") || null,
-  };
+  const str = (k: string) => String(formData.get(k) ?? "") || null;
 
-  await prisma.pasaporte.upsert({
-    where: { patientId },
-    update: data,
-    create: { patientId, ...data },
+  // Solo hojas 4, 5 y 6 — sin instrucciones médicas
+  await upsertPasaporte(patientId, {
+    birthDate:         str("birthDate"),
+    bloodType:         str("bloodType"),
+    emergencyName:     str("emergencyName"),
+    emergencyPhone:    str("emergencyPhone"),
+    neurologistName:   str("neurologistName"),
+    neurologistPhone:  str("neurologistPhone"),
+    nutritionistName:  str("nutritionistName"),
+    nutritionistPhone: str("nutritionistPhone"),
+    anticonvulsants:   str("anticonvulsants"),
+    supplements:       str("supplements"),
+    allergies:         str("allergies"),
+    dietType:          str("dietType"),
+    ketogenicRatio:    str("ketogenicRatio"),
+    ketogenicFormula:  str("ketogenicFormula"),
+    dietRestrictions:  str("dietRestrictions"),
   });
 
   revalidatePath(`/dashboard/pacientes/${patientId}/pasaporte`);

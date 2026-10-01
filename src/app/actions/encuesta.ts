@@ -1,100 +1,65 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { bogotaParts, slotForHour } from "@/lib/time";
+import { findPatientByToken, findPatientByDocument } from "@/lib/db/patients";
+import { findSurveyBySlot, createSurvey, updateSurvey, listSurveysByPatient, listSurveysByMonth } from "@/lib/db/surveys";
+import { findPasaporte } from "@/lib/db/pasaportes";
 
 export async function getPatientByToken(token: string) {
-  return prisma.patient.findFirst({
-    where: { surveyToken: token, active: true, ketolanceActive: true },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      surveyToken: true,
-    },
-  });
+  return findPatientByToken(token);
 }
 
 export async function loginByDocument(documentId: string) {
-  const patient = await prisma.patient.findFirst({
-    where: { documentId: documentId.trim(), active: true },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      surveyToken: true,
-      diagnosis: true,
-      ketolanceActive: true,
-    },
-  });
+  const patient = await findPatientByDocument(documentId);
   if (!patient) return null;
 
-  // Encuestas del mes actual
   const { date } = bogotaParts();
-  const month = date.slice(0, 7); // YYYY-MM
-  const surveys = await prisma.survey.findMany({
-    where: { patientId: patient.id, localDate: { startsWith: month } },
-    orderBy: [{ localDate: "desc" }, { slot: "asc" }],
-    take: 30,
-  });
+  const month = date.slice(0, 7);
 
+  const surveys = await listSurveysByMonth(patient.id, month);
   const completed = surveys.filter((s) => s.status === "COMPLETED").length;
   const total = surveys.length;
 
-  // Encuesta de hoy pendiente
   const todaySurveys = surveys.filter((s) => s.localDate === date);
   const slots = ["MANANA", "MEDIODIA", "TARDE"];
   const nextSlot = slots.find(
     (sl) => !todaySurveys.find((s) => s.slot === sl && s.status === "COMPLETED"),
-  );
+  ) ?? null;
 
-  // Última encuesta completada
   const lastCompleted = surveys.find((s) => s.status === "COMPLETED");
 
   return {
-    ...patient,
-    stats: { completed, total, month },
-    nextSlot: nextSlot ?? null,
-    lastSurveyDate: lastCompleted?.localDate ?? null,
+    id:              patient.id,
+    firstName:       patient.firstName,
+    lastName:        patient.lastName,
+    surveyToken:     patient.surveyToken,
+    diagnosis:       patient.diagnosis,
+    ketolanceActive: patient.ketolanceActive,
+    stats:           { completed, total, month },
+    nextSlot,
+    lastSurveyDate:  lastCompleted?.localDate ?? null,
   };
 }
 
 export async function getPasaporteByPatientId(patientId: string) {
   const [pasaporte, surveys] = await Promise.all([
-    prisma.pasaporte.findUnique({ where: { patientId } }),
-    prisma.survey.findMany({
-      where: { patientId },
-      orderBy: [{ localDate: "desc" }, { slot: "asc" }],
-    }),
+    findPasaporte(patientId),
+    listSurveysByPatient(patientId),
   ]);
   return { pasaporte, surveys };
 }
 
 export async function submitEncuesta(formData: FormData) {
-  const token = String(formData.get("token") ?? "");
-  const slotOverride = String(formData.get("slotOverride") ?? "") as
-    | "MANANA"
-    | "MEDIODIA"
-    | "TARDE"
-    | "";
+  const token       = String(formData.get("token") ?? "");
+  const slotOverride = String(formData.get("slotOverride") ?? "") as "MANANA" | "MEDIODIA" | "TARDE" | "";
 
-  const patient = await prisma.patient.findFirst({
-    where: { surveyToken: token, active: true },
-  });
+  const patient = await findPatientByToken(token);
   if (!patient) throw new Error("Paciente no encontrado");
 
   const { date, hour } = bogotaParts();
-  const slot =
-    slotOverride ||
-    slotForHour(hour) ||
-    (hour < 12 ? "MANANA" : hour < 16 ? "MEDIODIA" : "TARDE");
+  const slot = slotOverride || slotForHour(hour) || (hour < 12 ? "MANANA" : hour < 16 ? "MEDIODIA" : "TARDE");
 
-  const str = (key: string) => String(formData.get(key) ?? "").trim() || null;
-
-  // Buscar encuesta existente del turno o crear nueva
-  const existing = await prisma.survey.findUnique({
-    where: { patientId_localDate_slot: { patientId: patient.id, localDate: date, slot } },
-  });
+  const str = (k: string) => String(formData.get(k) ?? "").trim() || null;
 
   const data = {
     vomitos:           str("vomitos"),
@@ -113,18 +78,33 @@ export async function submitEncuesta(formData: FormData) {
     completedAt:       new Date(),
   };
 
+  const existing = await findSurveyBySlot(patient.id, date, slot);
+
   if (existing) {
-    await prisma.survey.update({ where: { id: existing.id }, data });
+    await updateSurvey(existing.id, data);
   } else {
-    await prisma.survey.create({
-      data: {
-        patientId: patient.id,
-        slot,
-        localDate: date,
-        currentStep: "VOMITOS",
-        sentAt: new Date(),
-        ...data,
-      },
+    await createSurvey({
+      patientId:         patient.id,
+      slot,
+      localDate:         date,
+      currentStep:       "VOMITOS",
+      sentAt:            new Date(),
+      lastWhatsappId:    null,
+      errorMessage:      null,
+      vomitos:           data.vomitos,
+      diarrea:           data.diarrea,
+      fiebre:            data.fiebre,
+      temperaturaFiebre: data.temperaturaFiebre,
+      numeroCrisis:      data.numeroCrisis,
+      transgresionDieta: data.transgresionDieta,
+      cambioFae:         data.cambioFae,
+      glucosa:           data.glucosa,
+      cetonas:           data.cetonas,
+      estadoAnimo:       data.estadoAnimo,
+      peso:              data.peso,
+      observaciones:     data.observaciones,
+      status:            data.status,
+      completedAt:       data.completedAt,
     });
   }
 

@@ -1,4 +1,4 @@
-import { listAuditLogs, revertLogAction } from "@/app/actions/audit";
+import { listAuditLogsAction as listAuditLogs, revertLogAction } from "@/app/actions/audit";
 import { formatBogota } from "@/lib/time";
 
 export default async function AuditoriaPage() {
@@ -24,7 +24,7 @@ export default async function AuditoriaPage() {
           {logs.map((log) => (
             <tr key={log.id} className="border-b border-zinc-200 align-top">
               <td className="py-2 whitespace-nowrap">{formatBogota(log.createdAt)}</td>
-              <td>{log.actor?.name ?? "sistema"}</td>
+              <td>{log.actorName ?? "sistema"}</td>
               <td>
                 {log.action}
                 {log.reverted ? " (revertido)" : ""}

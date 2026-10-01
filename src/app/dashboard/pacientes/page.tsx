@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { listPatients } from "@/app/actions/patients";
+import { listPatientsAction as listPatients } from "@/app/actions/patients";
 import { requireSession } from "@/lib/auth";
 import { PatientCard } from "./patient-card";
 

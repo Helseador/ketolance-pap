@@ -1,34 +1,31 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
 import { isSuperadmin, requireSession } from "@/lib/auth";
-import { writeAudit } from "@/lib/audit";
+import { writeAudit } from "@/lib/db/audit";
+import { findSurveyById, updateSurvey } from "@/lib/db/surveys";
 
 export async function updateSurveyAnswers(formData: FormData) {
   const session = await requireSession();
   const id = String(formData.get("id") ?? "");
-  const before = await prisma.survey.findUnique({ where: { id } });
+  const before = await findSurveyById(id);
   if (!before) throw new Error("Encuesta no encontrada");
 
-  const str = (key: string) => String(formData.get(key) ?? "") || null;
+  const str = (k: string) => String(formData.get(k) ?? "") || null;
 
-  const after = await prisma.survey.update({
-    where: { id },
-    data: {
-      vomitos:           str("vomitos"),
-      diarrea:           str("diarrea"),
-      fiebre:            str("fiebre"),
-      temperaturaFiebre: str("temperaturaFiebre"),
-      numeroCrisis:      str("numeroCrisis"),
-      transgresionDieta: str("transgresionDieta"),
-      cambioFae:         str("cambioFae"),
-      glucosa:           str("glucosa"),
-      cetonas:           str("cetonas"),
-      estadoAnimo:       str("estadoAnimo"),
-      peso:              str("peso"),
-      observaciones:     str("observaciones"),
-    },
+  const after = await updateSurvey(id, {
+    vomitos:           str("vomitos"),
+    diarrea:           str("diarrea"),
+    fiebre:            str("fiebre"),
+    temperaturaFiebre: str("temperaturaFiebre"),
+    numeroCrisis:      str("numeroCrisis"),
+    transgresionDieta: str("transgresionDieta"),
+    cambioFae:         str("cambioFae"),
+    glucosa:           str("glucosa"),
+    cetonas:           str("cetonas"),
+    estadoAnimo:       str("estadoAnimo"),
+    peso:              str("peso"),
+    observaciones:     str("observaciones"),
   });
 
   await writeAudit({

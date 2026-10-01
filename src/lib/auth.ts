@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
-import { prisma } from "./prisma";
+import { findUserByEmail } from "@/lib/db/users";
 
 export type Role = "SUPERADMIN" | "EMPRESA" | "NUTRICIONISTA";
 
@@ -49,10 +49,10 @@ export async function readSession(): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, secret());
     return {
-      id: String(payload.id),
+      id:    String(payload.id),
       email: String(payload.email),
-      name: String(payload.name),
-      role: payload.role as Role,
+      name:  String(payload.name),
+      role:  payload.role as Role,
     };
   } catch {
     return null;
@@ -66,17 +66,15 @@ export async function requireSession() {
 }
 
 export async function loginWithPassword(email: string, password: string) {
-  const user = await prisma.user.findUnique({
-    where: { email: email.trim().toLowerCase() },
-  });
+  const user = await findUserByEmail(email);
   if (!user || !user.active) return null;
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return null;
   const session: SessionUser = {
-    id: user.id,
+    id:    user.id,
     email: user.email,
-    name: user.name,
-    role: user.role as Role,
+    name:  user.name,
+    role:  user.role,
   };
   await createSession(session);
   return session;

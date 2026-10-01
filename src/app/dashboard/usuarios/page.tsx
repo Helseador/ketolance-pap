@@ -1,4 +1,4 @@
-import { createUser, listUsers } from "@/app/actions/users";
+import { createUserAction as createUser, listUsersAction as listUsers } from "@/app/actions/users";
 
 export default async function UsuariosPage() {
   const users = await listUsers();
