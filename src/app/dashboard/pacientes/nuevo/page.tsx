@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { upsertPatient } from "@/app/actions/patients";
 import { redirect } from "next/navigation";
 

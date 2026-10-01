@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { getPatient, upsertPatientAction } from "@/app/actions/patients";
 import { updateSurveyAnswers } from "@/app/actions/surveys";

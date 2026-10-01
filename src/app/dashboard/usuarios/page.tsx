@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { createUserAction as createUser, listUsersAction as listUsers } from "@/app/actions/users";
 
 export default async function UsuariosPage() {

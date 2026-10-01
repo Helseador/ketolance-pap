@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { listPatientsAction as listPatients } from "@/app/actions/patients";
 import { requireSession } from "@/lib/auth";

@@ -12,7 +12,7 @@
     "worker": "tsx src/worker.ts"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   },
   "dependencies": {
     "@fontsource/plus-jakarta-sans": "^5.3.0",

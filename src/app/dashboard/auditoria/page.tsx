@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { listAuditLogsAction as listAuditLogs, revertLogAction } from "@/app/actions/audit";
 import { formatBogota } from "@/lib/time";
 

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { listSurveysByDate } from "@/lib/db/surveys";
 import { findPatientById } from "@/lib/db/patients";
