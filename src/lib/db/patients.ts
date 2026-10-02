@@ -1,5 +1,5 @@
 import { db, COL, newId, toDate } from "@/lib/firebase";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, type DocumentData, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 
 export type Patient = {
   id: string;
@@ -20,7 +20,7 @@ export type Patient = {
   updatedAt: Date;
 };
 
-function docToPatient(id: string, data: FirebaseFirestore.DocumentData): Patient {
+function docToPatient(id: string, data: DocumentData): Patient {
   return {
     id,
     documentId:     data.documentId,
@@ -42,12 +42,11 @@ function docToPatient(id: string, data: FirebaseFirestore.DocumentData): Patient
 }
 
 export async function listPatients(ids?: string[]): Promise<Patient[]> {
-  let query: FirebaseFirestore.Query = db.collection(COL.PATIENTS)
+  const snap = await db.collection(COL.PATIENTS)
     .where("active", "==", true)
-    .orderBy("lastName");
-
-  const snap = await query.get();
-  let patients = snap.docs.map((d) => docToPatient(d.id, d.data()));
+    .orderBy("lastName")
+    .get();
+  let patients = snap.docs.map((d: QueryDocumentSnapshot) => docToPatient(d.id, d.data()));
 
   if (ids) patients = patients.filter((p) => ids.includes(p.id));
   return patients;
@@ -93,7 +92,7 @@ export async function listActiveKetolance(): Promise<Patient[]> {
     .where("active", "==", true)
     .where("ketolanceActive", "==", true)
     .get();
-  return snap.docs.map((d) => docToPatient(d.id, d.data()));
+  return snap.docs.map((d: QueryDocumentSnapshot) => docToPatient(d.id, d.data()));
 }
 
 export async function createPatient(data: Omit<Patient, "id" | "createdAt" | "updatedAt">): Promise<Patient> {
@@ -120,7 +119,7 @@ export async function updatePatient(id: string, data: Partial<Patient>): Promise
 export async function getAssignedPatientIds(userId: string): Promise<string[]> {
   const snap = await db.collection(COL.ASSIGNMENTS)
     .where("userId", "==", userId).get();
-  return snap.docs.map((d) => d.data().patientId as string);
+  return snap.docs.map((d: QueryDocumentSnapshot) => d.data().patientId as string);
 }
 
 export async function assignPatient(userId: string, patientId: string) {

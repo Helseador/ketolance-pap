@@ -1,5 +1,5 @@
 import { db, COL, newId, toDate } from "@/lib/firebase";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, type DocumentData, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 
 export type Survey = {
   id: string;
@@ -31,7 +31,7 @@ export type Survey = {
   updatedAt: Date;
 };
 
-function docToSurvey(id: string, data: FirebaseFirestore.DocumentData): Survey {
+function docToSurvey(id: string, data: DocumentData): Survey {
   return {
     id,
     patientId:         data.patientId,
@@ -84,7 +84,7 @@ export async function listSurveysByDate(localDate: string): Promise<Survey[]> {
   const snap = await db.collection(COL.SURVEYS)
     .where("localDate", "==", localDate)
     .orderBy("slot").get();
-  return snap.docs.map((d) => docToSurvey(d.id, d.data()));
+  return snap.docs.map((d: QueryDocumentSnapshot) => docToSurvey(d.id, d.data()));
 }
 
 export async function listSurveysByPatient(patientId: string): Promise<Survey[]> {
@@ -92,17 +92,16 @@ export async function listSurveysByPatient(patientId: string): Promise<Survey[]>
     .where("patientId", "==", patientId)
     .orderBy("localDate", "desc")
     .orderBy("slot").get();
-  return snap.docs.map((d) => docToSurvey(d.id, d.data()));
+  return snap.docs.map((d: QueryDocumentSnapshot) => docToSurvey(d.id, d.data()));
 }
 
 export async function listSurveysByMonth(patientId: string, month: string): Promise<Survey[]> {
-  // month = YYYY-MM
   const snap = await db.collection(COL.SURVEYS)
     .where("patientId", "==", patientId)
     .where("localDate", ">=", `${month}-01`)
     .where("localDate", "<=", `${month}-31`)
     .orderBy("localDate").get();
-  return snap.docs.map((d) => docToSurvey(d.id, d.data()));
+  return snap.docs.map((d: QueryDocumentSnapshot) => docToSurvey(d.id, d.data()));
 }
 
 export async function findSurveyById(id: string): Promise<Survey | null> {

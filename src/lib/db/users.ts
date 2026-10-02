@@ -1,5 +1,5 @@
 import { db, COL, newId, toDate } from "@/lib/firebase";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, type DocumentData } from "firebase-admin/firestore";
 
 export type UserRole = "SUPERADMIN" | "EMPRESA" | "NUTRICIONISTA";
 
@@ -14,7 +14,7 @@ export type User = {
   updatedAt: Date;
 };
 
-function docToUser(id: string, data: FirebaseFirestore.DocumentData): User {
+function docToUser(id: string, data: DocumentData): User {
   return {
     id,
     email:        data.email,
@@ -47,7 +47,7 @@ export async function listUsers(): Promise<Omit<User, "passwordHash">[]> {
   const snap = await db.collection(COL.USERS)
     .orderBy("createdAt", "desc")
     .get();
-  return snap.docs.map((d) => {
+  return snap.docs.map((d: { id: string; data: () => DocumentData }) => {
     const u = docToUser(d.id, d.data());
     const { passwordHash: _, ...rest } = u;
     return rest;

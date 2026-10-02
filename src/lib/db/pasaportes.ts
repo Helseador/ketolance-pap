@@ -1,5 +1,5 @@
 import { db, COL, toDate } from "@/lib/firebase";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, type DocumentData } from "firebase-admin/firestore";
 
 export type Pasaporte = {
   id: string;
@@ -28,7 +28,7 @@ export type Pasaporte = {
   updatedAt: Date;
 };
 
-function docToPasaporte(id: string, data: FirebaseFirestore.DocumentData): Pasaporte {
+function docToPasaporte(id: string, data: DocumentData): Pasaporte {
   return {
     id,
     patientId:         data.patientId,

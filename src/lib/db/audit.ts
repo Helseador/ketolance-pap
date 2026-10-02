@@ -1,5 +1,5 @@
 import { db, COL, newId, toDate } from "@/lib/firebase";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, type DocumentData, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 import type { SessionUser } from "@/lib/auth";
 
 export type AuditLog = {
@@ -17,7 +17,7 @@ export type AuditLog = {
   createdAt: Date;
 };
 
-function docToAudit(id: string, data: FirebaseFirestore.DocumentData): AuditLog {
+function docToAudit(id: string, data: DocumentData): AuditLog {
   return {
     id,
     actorId:    data.actorId ?? null,
@@ -63,7 +63,7 @@ export async function listAuditLogs(limit = 200): Promise<AuditLog[]> {
   const snap = await db.collection(COL.AUDIT)
     .orderBy("createdAt", "desc")
     .limit(limit).get();
-  return snap.docs.map((d) => docToAudit(d.id, d.data()));
+  return snap.docs.map((d: QueryDocumentSnapshot) => docToAudit(d.id, d.data()));
 }
 
 export async function revertAuditLog(logId: string, actor: SessionUser): Promise<void> {
